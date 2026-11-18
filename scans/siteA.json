@@ -1,0 +1,217 @@
+{
+  "start_time": 1794961806,
+  "start_memory": 64786432,
+  "command_line": "wpscan --url http://localhost/siteA/ --api-token [REDACTED] --enumerate u --random-user-agent --no-banner --format json --output scans/siteA.json",
+  "hostname": "jyde",
+  "target_url": "http://localhost/siteA/",
+  "target_ip": "::1",
+  "effective_url": "http://localhost/siteA/",
+  "interesting_findings": [
+    {
+      "url": "http://localhost/siteA/",
+      "to_s": "Headers",
+      "type": "headers",
+      "found_by": "Headers (Passive Detection)",
+      "confidence": 100,
+      "confirmed_by": {
+
+      },
+      "references": {
+
+      },
+      "interesting_entries": [
+        "Server: Apache/2.4.58 (Unix) OpenSSL/1.1.1w PHP/8.2.12 mod_perl/2.0.12 Perl/v5.34.1",
+        "X-Powered-By: PHP/8.2.12"
+      ]
+    },
+    {
+      "url": "http://localhost/siteA/xmlrpc.php",
+      "to_s": "XML-RPC seems to be enabled: http://localhost/siteA/xmlrpc.php",
+      "type": "xmlrpc",
+      "found_by": "Headers (Passive Detection)",
+      "confidence": 100,
+      "confirmed_by": {
+        "Link Tag (Passive Detection)": {
+          "confidence": 30
+        },
+        "Direct Access (Aggressive Detection)": {
+          "confidence": 100
+        }
+      },
+      "references": {
+        "url": [
+          "http://codex.wordpress.org/XML-RPC_Pingback_API"
+        ],
+        "metasploit": [
+          "auxiliary/scanner/http/wordpress_ghost_scanner",
+          "auxiliary/dos/http/wordpress_xmlrpc_dos",
+          "auxiliary/scanner/http/wordpress_xmlrpc_login",
+          "auxiliary/scanner/http/wordpress_pingback_access"
+        ]
+      },
+      "interesting_entries": [
+
+      ]
+    },
+    {
+      "url": "http://localhost/siteA/readme.html",
+      "to_s": "WordPress readme found: http://localhost/siteA/readme.html",
+      "type": "readme",
+      "found_by": "Direct Access (Aggressive Detection)",
+      "confidence": 100,
+      "confirmed_by": {
+
+      },
+      "references": {
+
+      },
+      "interesting_entries": [
+
+      ]
+    },
+    {
+      "url": "http://localhost/siteA/wp-cron.php",
+      "to_s": "The external WP-Cron seems to be enabled: http://localhost/siteA/wp-cron.php",
+      "type": "wp_cron",
+      "found_by": "Direct Access (Aggressive Detection)",
+      "confidence": 60,
+      "confirmed_by": {
+
+      },
+      "references": {
+        "url": [
+          "https://www.iplocation.net/defend-wordpress-from-ddos",
+          "https://github.com/wpscanteam/wpscan/issues/1299"
+        ]
+      },
+      "interesting_entries": [
+
+      ]
+    }
+  ],
+  "version": {
+    "number": "4.0.38",
+    "release_date": "2022-11-30",
+    "status": "insecure",
+    "found_by": "Rss Generator (Passive Detection)",
+    "confidence": 100,
+    "interesting_entries": [
+      "http://localhost/siteA/?feed=rss2, <generator>https://wordpress.org/?v=4.0.38</generator>"
+    ],
+    "confirmed_by": {
+      "Rss Generator (Passive Detection)": {
+        "confidence": 80,
+        "interesting_entries": [
+          "http://localhost/siteA/?feed=comments-rss2, <generator>https://wordpress.org/?v=4.0.38</generator>"
+        ]
+      }
+    },
+    "vulnerabilities": [
+
+    ]
+  },
+  "main_theme": {
+    "slug": "twentyfourteen",
+    "location": "http://localhost/siteA/wp-content/themes/twentyfourteen/",
+    "latest_version": "4.5",
+    "last_updated": "2026-08-18T23:00:00Z",
+    "last_updated_relative": "3 months ago",
+    "last_updated_source": "WordPress.org",
+    "active_installs": 50000,
+    "outdated": true,
+    "readme_url": false,
+    "directory_listing": false,
+    "error_log_url": null,
+    "style_url": "http://localhost/siteA/wp-content/themes/twentyfourteen/style.css?ver=4.0.38",
+    "style_name": "Twenty Fourteen",
+    "style_uri": "http://wordpress.org/themes/twentyfourteen",
+    "description": "In 2014, our default theme lets you create a responsive magazine website with a sleek, modern design. Feature your favorite homepage content in either a grid or a slider. Use the three widget areas to customize your website, and change your content's layout with a full-width page template and a contributor page to show off your authors. Creating a magazine website with WordPress has never been easier.",
+    "author": "the WordPress team",
+    "author_uri": "http://wordpress.org/",
+    "template": null,
+    "license": "GNU General Public License v2 or later",
+    "license_uri": "http://www.gnu.org/licenses/gpl-2.0.html",
+    "tags": "black, green, white, light, dark, two-columns, three-columns, left-sidebar, right-sidebar, fixed-layout, responsive-layout, custom-background, custom-header, custom-menu, editor-style, featured-images, flexible-header, full-width-template, microformats, post-formats, rtl-language-support, sticky-post, theme-options, translation-ready, accessibility-ready",
+    "text_domain": "twentyfourteen",
+    "found_by": "Css Style In Homepage (Passive Detection)",
+    "confidence": 70,
+    "interesting_entries": [
+
+    ],
+    "confirmed_by": {
+
+    },
+    "vulnerabilities": [
+
+    ],
+    "version": {
+      "number": "1.2",
+      "confidence": 80,
+      "found_by": "Style (Passive Detection)",
+      "interesting_entries": [
+        "http://localhost/siteA/wp-content/themes/twentyfourteen/style.css?ver=4.0.38, Match: 'Version: 1.2'"
+      ],
+      "confirmed_by": {
+
+      }
+    },
+    "parents": [
+
+    ]
+  },
+  "users": {
+    "admin": {
+      "id": null,
+      "found_by": "Author Posts - Display Name (Passive Detection)",
+      "confidence": 100,
+      "interesting_entries": [
+
+      ],
+      "confirmed_by": {
+        "Rss Generator (Passive Detection)": {
+          "confidence": 50,
+          "interesting_entries": [
+
+          ]
+        },
+        "Author Id Brute Forcing - Display Name (Aggressive Detection)": {
+          "confidence": 50,
+          "interesting_entries": [
+
+          ]
+        },
+        "Login Error Messages (Aggressive Detection)": {
+          "confidence": 100,
+          "interesting_entries": [
+
+          ]
+        }
+      }
+    }
+  },
+  "vuln_api": {
+    "plan": "free",
+    "requests_done_during_scan": 2,
+    "requests_remaining": 5
+  },
+  "stop_time": 1794961816,
+  "elapsed": 10,
+  "requests_done": 62,
+  "cached_requests": 6,
+  "response_status_codes": {
+    "404": 35,
+    "200": 24,
+    "500": 2,
+    "302": 1
+  },
+  "response_status_codes_warning": false,
+  "response_status_codes_warnings": [
+
+  ],
+  "data_sent": 20144,
+  "data_sent_humanised": "19.672 KB",
+  "data_received": 233949,
+  "data_received_humanised": "228.466 KB",
+  "used_memory": 184754176,
+  "used_memory_humanised": "176.195 MB"
+}

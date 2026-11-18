@@ -1,0 +1,33 @@
+┌──(olowoyobabajide㉿jyde)-[~/Documents/wordpress_work]
+└─$ sudo /opt/lampp/lampp start
+Starting XAMPP for Linux 8.2.12-0...
+XAMPP: Starting Apache...ok.
+XAMPP: Starting MySQL...ok.
+XAMPP: Starting ProFTPD...ok.
+
+┌──(olowoyobabajide㉿jyde)-[~/Documents/wordpress_work]
+└─$ sudo /opt/lampp/lampp status
+Version: XAMPP for Linux 8.2.12-0
+Apache is running.
+MySQL is running.
+ProFTPD is running.
+
+┌──(olowoyobabajide㉿jyde)-[~/Documents/wordpress_work]
+└─$ /opt/lampp/bin/mysql -uroot --table -e "SHOW DATABASES;"
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| phpmyadmin         |
+| test               |
+| wp_sitea           |
+| wp_siteb           |
++--------------------+
+
+┌──(olowoyobabajide㉿jyde)-[~/Documents/wordpress_work]
+└─$ /opt/lampp/bin/mysql -uroot -e "SELECT table_schema, COUNT(*) AS tables FROM information_schema.tables WHERE table_schema LIKE 'wp_site%' GROUP BY table_schema;"
+table_schema    tables
+wp_sitea        11
+wp_siteb        12

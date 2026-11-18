@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<title>WordPress Core Security Assessment</title>
+<style>
+@page { size: A4; margin: 16mm 15mm 15mm 15mm; }
+* { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: "DejaVu Sans", "Liberation Sans", Arial, sans-serif; font-size: 10.2pt; line-height: 1.5; color: #1b1b1b; margin: 0; }
+.cover { page-break-after: always; padding-top: 55mm; }
+.kicker { font-size: 10pt; letter-spacing: 0.18em; text-transform: uppercase; color: #8a1c1c; font-weight: bold; }
+.cover h1 { font-size: 25pt; line-height: 1.2; margin: 8mm 0 6mm 0; color: #111; border: 0; page-break-after: auto; }
+.rule { height: 0; width: 34mm; border-top: 3px solid #8a1c1c; margin-bottom: 12mm; }
+table.meta { border: 0; width: 100%; font-size: 10pt; margin: 0; }
+table.meta td { border: 0; padding: 2.2mm 0; vertical-align: top; background: transparent !important; }
+table.meta td:first-child { width: 34mm; color: #666; text-transform: uppercase; font-size: 8.5pt; letter-spacing: .08em; }
+h2 { font-size: 16pt; color: #8a1c1c; margin: 13mm 0 4mm 0; padding-bottom: 2mm; border-bottom: 1px solid #d8d8d8; page-break-after: avoid; }
+h2:first-of-type { margin-top: 0; }
+h3 { font-size: 12.2pt; color: #1f1f1f; margin: 8mm 0 2.5mm 0; page-break-after: avoid; }
+h4 { font-size: 10.8pt; margin: 5mm 0 2mm 0; page-break-after: avoid; }
+p { margin: 0 0 3mm 0; text-align: justify; }
+ul, ol { margin: 0 0 3.5mm 0; padding-left: 6mm; }
+li { margin-bottom: 1.4mm; }
+code { font-family: "DejaVu Sans Mono", monospace; font-size: 8.8pt; background: #f2f2f2; padding: 0.3mm 1mm; border-radius: 2px; }
+pre { background: #14181f; color: #e6edf3; padding: 4mm; border-radius: 2mm; font-size: 8.4pt; line-height: 1.45; overflow-wrap: break-word; white-space: pre-wrap; page-break-inside: avoid; }
+pre code { background: none; color: inherit; padding: 0; font-size: 8.4pt; }
+table { width: 100%; border-collapse: collapse; margin: 3mm 0 5mm 0; font-size: 9pt; page-break-inside: avoid; }
+th, td { border: 0.6pt solid #cfcfcf; padding: 2mm 2.4mm; vertical-align: top; text-align: left; }
+th { background: #f0eeee; font-weight: bold; border-bottom: 1.4pt solid #8a1c1c; }
+tr:nth-child(even) td { background: #fafafa; }
+img { display: block; max-width: 100%; max-height: 232mm; width: auto; height: auto; margin: 3mm auto 1mm auto; border: 0.6pt solid #c9c9c9; page-break-inside: avoid; }
+img.tall { max-height: 250mm; }
+p > em { display: block; text-align: center; font-size: 8.6pt; color: #555; margin: 1mm 0 6mm 0; }
+hr { border: 0; border-top: 1px solid #ddd; margin: 6mm 0; }
+strong { color: #111; }
+blockquote { border-left: 3px solid #8a1c1c; margin: 3mm 0; padding: 1mm 4mm; color: #333; background: #faf7f7; }
+</style></head>
+<body>
+
+<div class="cover">
+  <div class="kicker">Security assessment report</div>
+  <h1>Comparative Security Assessment of WordPress 4.0.38 (Site A) and WordPress 7.1.4 (Site B) on XAMPP</h1>
+  <div class="rule"></div>
+  <table class="meta">
+    <tr><td>Prepared by</td><td>Olowoyobabajide</td></tr>
+    <tr><td>Date</td><td>15 November 2026</td></tr>
+    <tr><td>Platform</td><td>Kali GNU/Linux Rolling 2026.2 &middot; XAMPP for Linux 8.2.12-0</td></tr>
+    <tr><td>Targets</td><td>Site A: WordPress 4.0.38 &middot; Site B: WordPress 7.1.4</td></tr>
+    <tr><td>Scanner</td><td>WPScan 4.1.0</td></tr>
+  </table>
+</div>
+
+<h2>1. Executive summary</h2>
+<p>I built a local lab on XAMPP with two WordPress installations taken from the archives supplied in the working directory: WordPress 4.0.38 as Site A and WordPress 7.1.4 as Site B. I installed both through their native web installers, recorded the process with screenshots, and scanned each site with WPScan.</p>
+<p>The two scans returned the same number of version-specific vulnerabilities: zero. The difference was in the status that WPScan assigned to each core. Site A was reported as <strong>Insecure</strong>, released on 30 November 2022, and Site B as <strong>Latest</strong>, released on 28 October 2026. WPScan also classed Site A's bundled Twenty Fourteen theme as out of date (1.2 against 4.5) and Site B's Twenty Twenty-Five theme as current (1.5).</p>
+<p>The scan result did not mean the two cores carried equal risk. Site A is the final release of the 4.0 branch and has received no core fixes since 2022. The NVD record set for the version range that includes 4.0.38 contains 134 CVE entries, including 14 critical and 37 high severity. Five entries were published after 4.0.38 shipped. Three of those, CVE-2023-2745 (directory traversal, May 2023), CVE-2024-31210 (plugin-upload RCE, April 2024) and CVE-2026-87902 (template path inclusion leading to RCE, September 2026, CVSS 8.1), were not backported to the 4.0 branch. The equivalent NVD query for 7.1.4 returned no CVE entries.</p>
+<p>The architectural comparison produced four concrete differences:</p>
+<ol>
+<li><strong>Maintenance lifecycle.</strong> Site A sits on an end-of-life branch whose last release was 4.0.38 in November 2022. Site B is on the current release line.</li>
+<li><strong>Password storage.</strong> Site A stores administrator passwords with phpass portable MD5 (<code>$P$B…</code>, cost 8). Site B stores them with bcrypt (<code>$wp$2y$10$…</code>, cost 10) through PHP <code>password_hash()</code>.</li>
+<li><strong>Runtime compatibility.</strong> WordPress 4.0.38 could not run on PHP 8.2.12 without five compatibility interventions. WordPress 7.1.4 ran without modification.</li>
+<li><strong>Default exposure.</strong> Both sites exposed XML-RPC, <code>readme.html</code>, externally reachable WP-Cron and verbose server headers. Site B additionally exposed the uploads directory and enumerated the <code>admin</code> user through the REST API and user sitemap.</li>
+</ol>
+<p>My conclusion is that the inherent security difference between these two cores is driven less by isolated coding defects than by the presence or absence of a maintained patch pipeline, modern password cryptography, and compatibility with the current PHP runtime.</p>
+<hr />
+<h2>2. Scope and environment</h2>
+<p>I worked from <code>/home/olowoyobabajide/Documents/wordpress_work</code>. The two supplied archives were:</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Version</th>
+<th>Size</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>wordpress-4.0.38.zip</code></td>
+<td>4.0.38</td>
+<td>6.3 MB</td>
+</tr>
+<tr>
+<td><code>wordpress-7.1.4.zip</code></td>
+<td>7.1.4</td>
+<td>35.5 MB</td>
+</tr>
+</tbody>
+</table>
+<p>The host was Kali GNU/Linux Rolling 2026.2 (kernel 7.1.5), with 15 GB RAM and a graphical session on display <code>:0</code>. XAMPP for Linux 8.2.12-0 was already present at <code>/opt/lampp</code>; its stack consisted of Apache 2.4.58, MariaDB 10.4.32, PHP 8.2.12, OpenSSL 1.1.1w and ProFTPD. WPScan 4.1.0 was installed at <code>/usr/bin/wpscan</code>.</p>
+<p>I created the working directories <code>src/</code>, <code>scans/</code>, <code>screenshots/</code>, <code>logs/</code>, <code>report/</code> and <code>tools/</code> for source archives, scan output, evidence, console captures and the report build.</p>
+<hr />
+<h2>3. XAMPP installation and verification</h2>
+<p>XAMPP was installed at <code>/opt/lampp</code> with the standard installer layout. I started the stack as root:</p>
+<pre><code class="language-bash">sudo /opt/lampp/lampp start
+</code></pre>
+<p>Apache, MySQL and ProFTPD all reported <code>ok</code>. A status check and a direct request to <code>http://localhost/</code> returned HTTP 302 to the XAMPP dashboard, confirming that the web tier was serving. I recorded the running stack and the databases in the console capture in Figure 2.</p>
+<p><img alt="Figure 1 – XAMPP 8.2.12 dashboard on localhost" class="tall" src="screenshots/11-xampp-dashboard.jpg" /></p>
+<p><em>Figure 1. The XAMPP dashboard after starting Apache, MariaDB and ProFTPD. The page identifies the stack as XAMPP for Linux 8.2.12 and states that the default configuration is intended for development and is insecure if exposed to others.</em></p>
+<p><img alt="Figure 2 – XAMPP services and databases" src="screenshots/14-xampp-status-and-databases.png" /></p>
+<p><em>Figure 2. Console evidence of the service start, the running status of Apache/MySQL/ProFTPD, the <code>wp_sitea</code> and <code>wp_siteb</code> databases, and the table counts (11 and 12).</em></p>
+<p>I connected to MariaDB as <code>root</code> with the XAMPP default empty password and created one database per site:</p>
+<pre><code class="language-sql">CREATE DATABASE wp_sitea CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+CREATE DATABASE wp_siteb CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+</code></pre>
+<p>phpMyAdmin confirmed both schemas under the <code>root@localhost</code> account.</p>
+<p><img alt="Figure 3 – Databases in phpMyAdmin" class="tall" src="screenshots/13-phpmyadmin-databases.jpg" /></p>
+<p><em>Figure 3. phpMyAdmin 5.2.1 listing <code>wp_sitea</code> and <code>wp_siteb</code> alongside the default XAMPP schemas.</em></p>
+<hr />
+<h2>4. WordPress deployment</h2>
+<h3>4.1 Site A – WordPress 4.0.38</h3>
+<p>I extracted the archive and copied it to the document root:</p>
+<pre><code class="language-bash">unzip -q wordpress-4.0.38.zip -d src/siteA
+sudo cp -a src/siteA/wordpress /opt/lampp/htdocs/siteA
+sudo chown -R daemon:daemon /opt/lampp/htdocs/siteA
+</code></pre>
+<p>The reported core version was:</p>
+<pre><code class="language-php">$wp_version = '4.0.38';
+</code></pre>
+<p>I generated <code>wp-config.php</code> from the bundled sample, set the database to <code>wp_sitea</code> with the <code>root</code> account, and inserted a fresh set of authentication keys and salts from the WordPress secret-key API.</p>
+<h3>4.2 Site B – WordPress 7.1.4</h3>
+<p>I repeated the procedure for the second archive:</p>
+<pre><code class="language-bash">unzip -q wordpress-7.1.4.zip -d src/siteB
+sudo cp -a src/siteB/wordpress /opt/lampp/htdocs/siteB
+sudo chown -R daemon:daemon /opt/lampp/htdocs/siteB
+</code></pre>
+<p>The reported core version was:</p>
+<pre><code class="language-php">$wp_version = '7.1.4';
+</code></pre>
+<p>Site B used the database <code>wp_siteb</code> and its own salt set.</p>
+<h3>4.3 PHP 8.2 compatibility work on WordPress 4.0.38</h3>
+<p>WordPress 7.1.4 installed and ran on PHP 8.2.12 without changes. WordPress 4.0.38 did not. I recorded five distinct failures and applied the minimum changes needed to make the legacy core executable. None of these changes altered the reported core version.</p>
+<p><strong>Failure 1 – uncaught mysqli exception.</strong> The first request returned HTTP 500 with an empty body. The PHP log showed:</p>
+<pre><code>PHP Fatal error: Uncaught mysqli_sql_exception: Table 'wp_sitea.wp_options' doesn't exist
+in /opt/lampp/htdocs/siteA/wp-includes/wp-db.php:1781
+</code></pre>
+<p>PHP 8.1 changed the default mysqli error mode to exceptions, which the 4.0 <code>wpdb</code> class does not catch. I added <code>mysqli_report(MYSQLI_REPORT_OFF);</code> at the top of <code>wp-config.php</code>.</p>
+<p><strong>Failure 2 – removed <code>get_magic_quotes_gpc()</code>.</strong> The next request failed in <code>wp_magic_quotes()</code>:</p>
+<pre><code>PHP Fatal error: Uncaught Error: Call to undefined function get_magic_quotes_gpc()
+in /opt/lampp/htdocs/siteA/wp-includes/load.php:585
+</code></pre>
+<p>The function was removed in PHP 8.0. I added a compatibility definition that returns <code>false</code>.</p>
+<p><strong>Failure 3 – removed <code>create_function()</code>.</strong> The 4.0 code base calls <code>create_function()</code> in the POMO translation layer and the Atom parser. I added a compatibility implementation that returns a closure through <code>eval()</code>, preserving the call sites.</p>
+<p><strong>Failure 4 – PHP 4-style constructor in phpass.</strong> After the installer completed, the administrator hash in <code>wp_users</code> was <code>*</code> and login failed. <code>wp_hash_password()</code> returned <code>*</code> because <code>PasswordHash</code> uses a PHP 4-style constructor:</p>
+<pre><code class="language-php">function PasswordHash($iteration_count_log2, $portable_hashes)
+</code></pre>
+<p>PHP 8 no longer treats a method with the class name as a constructor, so the object's <code>itoa64</code> alphabet was never initialised and <code>gensalt_private()</code> produced only <code>$P$</code>. I added a <code>__construct()</code> wrapper that calls the legacy method. A direct test then produced a valid hash:</p>
+<pre><code>$P$BWQ2c3DiPYUZyRr4GAZjBf0Gtx28s70
+</code></pre>
+<p><strong>Failure 5 – scalar offset in <code>wp_signon()</code>.</strong> The login page returned HTTP 500 with:</p>
+<pre><code>PHP Fatal error: Uncaught TypeError: Cannot access offset of type string on string
+in /opt/lampp/htdocs/siteA/wp-includes/user.php:39
+</code></pre>
+<p><code>wp-login.php</code> passed an empty string as the credentials array, which PHP 8 rejects when <code>wp_signon()</code> writes <code>$credentials['remember']</code>. I changed the call to <code>wp_signon( array(), $secure_cookie )</code>.</p>
+<p>After these changes the installer, login, dashboard and front end all worked.</p>
+<hr />
+<h2>5. Installation results</h2>
+<h3>5.1 Site A installer</h3>
+<p><img alt="Figure 4 – WordPress 4.0.38 language selection" src="screenshots/01-siteA-install-language.jpg" /></p>
+<p><em>Figure 4. The legacy installer opens with a language list and the 2014-era WordPress mark.</em></p>
+<p><img alt="Figure 5 – WordPress 4.0.38 installation form" src="screenshots/02-siteA-install-form.jpg" /></p>
+<p><em>Figure 5. The 4.0.38 installer form. The password fields have no visibility toggle or strength meter output beyond the legacy strength indicator.</em></p>
+<p><img alt="Figure 6 – WordPress 4.0.38 installation success" src="screenshots/03-siteA-install-success.jpg" /></p>
+<p><em>Figure 6. The installer confirms completion and creates the administrator account.</em></p>
+<h3>5.2 Site B installer</h3>
+<p><img alt="Figure 7 – WordPress 7.1.4 language selection" src="screenshots/05-siteB-install-language.jpg" /></p>
+<p><em>Figure 7. The current installer uses the modern WordPress identity and a larger language catalogue.</em></p>
+<p><img alt="Figure 8 – WordPress 7.1.4 installation form" src="screenshots/06-siteB-install-form.jpg" /></p>
+<p><em>Figure 8. The 7.1.4 form generates a strong password by default, offers a visibility toggle and reports password strength inline.</em></p>
+<p><img alt="Figure 9 – WordPress 7.1.4 installation success" src="screenshots/07-siteB-install-success.jpg" /></p>
+<p><em>Figure 9. The modern installer completes and links directly to the login screen.</em></p>
+<h3>5.3 Dashboards and front ends</h3>
+<p><img alt="Figure 10 – Site A dashboard" class="tall" src="screenshots/04-siteA-dashboard.jpg" /></p>
+<p><em>Figure 10. Site A dashboard. The At a Glance widget reports "WordPress 4.0.38 running Twenty Fourteen theme", and the red banner states that 7.1.4 is available, that 4.0.38 is no longer supported, and that security updates will not be received.</em></p>
+<p><img alt="Figure 11 – Site B dashboard" class="tall" src="screenshots/08-siteB-dashboard.jpg" /></p>
+<p><em>Figure 11. Site B dashboard. The At a Glance widget reports "WordPress 7.1.4 running Twenty Twenty-Five theme", with Site Health and the current-version welcome panel.</em></p>
+<p><img alt="Figure 12 – Site A front end" src="screenshots/09-siteA-frontend.jpg" /></p>
+<p><em>Figure 12. Site A front end with Twenty Fourteen and the administrator toolbar.</em></p>
+<p><img alt="Figure 13 – Site B front end" src="screenshots/10-siteB-frontend.jpg" /></p>
+<p><em>Figure 13. Site B front end with the Twenty Twenty-Five block theme.</em></p>
+<p>I verified the stored password formats directly in MariaDB. Site A held a phpass MD5 hash (<code>$P$B…</code>); Site B held a bcrypt hash (<code>$wp$2y$10$…</code>).</p>
+<p><img alt="Figure 14 – Version and password-hash evidence" src="screenshots/15-version-and-hash-evidence.png" /></p>
+<p><em>Figure 14. The two version strings and the first 14 characters of each administrator hash, read from <code>wp_users</code>.</em></p>
+<hr />
+<h2>6. WPScan methodology</h2>
+<p>I used WPScan 4.1.0 with the API token supplied for this assessment. The token value is redacted in every command and screenshot. The free plan allows 25 API requests per day; the two full scans and the preceding verification queries consumed the allowance.</p>
+<p>Before scanning I updated the local WPScan database:</p>
+<pre><code class="language-bash">wpscan --update
+</code></pre>
+<p>The first update attempt failed with <code>Could not resolve hostname</code> for <code>data.wpscan.org</code>. The local resolver returned only IPv6 addresses for that host, and the resolver path in use did not complete the lookup. I added the Cloudflare IPv4 addresses for <code>data.wpscan.org</code> (<code>104.21.63.114</code> and <code>172.67.145.113</code>) to <code>/etc/hosts</code>; the update then completed.</p>
+<p>The scan commands were:</p>
+<pre><code class="language-bash">wpscan --url http://localhost/siteA/ --api-token [REDACTED] \
+       --random-user-agent --no-banner --disable-tls-checks
+
+wpscan --url http://localhost/siteB/ --api-token [REDACTED] \
+       --random-user-agent --no-banner --disable-tls-checks
+</code></pre>
+<p>I also ran each site with <code>--enumerate u</code> and JSON output:</p>
+<pre><code class="language-bash">wpscan --url http://localhost/siteA/ --api-token [REDACTED] --enumerate u \
+       --random-user-agent --no-banner --format json --output scans/siteA.json
+
+wpscan --url http://localhost/siteB/ --api-token [REDACTED] --enumerate u \
+       --random-user-agent --no-banner --format json --output scans/siteB.json
+</code></pre>
+<p>The raw console output is in <code>logs/wpscan-siteA-cli.txt</code> and <code>logs/wpscan-siteB-cli.txt</code>; the JSON output is in <code>scans/siteA.json</code> and <code>scans/siteB.json</code>.</p>
+<hr />
+<h2>7. WPScan results</h2>
+<h3>7.1 Site A – WordPress 4.0.38</h3>
+<p>WPScan identified the core from the RSS generator with 100% confidence and reported:</p>
+<pre><code>[+] WordPress version 4.0.38 identified (Insecure, released on 2022-11-30).
+</code></pre>
+<p>The version record carried <strong>no individual vulnerability advisories</strong>. The scan reported the following findings:</p>
+<table>
+<thead>
+<tr>
+<th>Finding</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Server headers</td>
+<td><code>Apache/2.4.58 (Unix) OpenSSL/1.1.1w PHP/8.2.12 mod_perl/2.0.12 Perl/v5.34.1</code>; <code>X-Powered-By: PHP/8.2.12</code></td>
+</tr>
+<tr>
+<td>XML-RPC</td>
+<td>Enabled at <code>/siteA/xmlrpc.php</code></td>
+</tr>
+<tr>
+<td>Readme</td>
+<td><code>/siteA/readme.html</code> reachable</td>
+</tr>
+<tr>
+<td>WP-Cron</td>
+<td>External <code>/siteA/wp-cron.php</code> reachable</td>
+</tr>
+<tr>
+<td>Theme</td>
+<td>Twenty Fourteen 1.2; latest is 4.5</td>
+</tr>
+<tr>
+<td>User</td>
+<td><code>admin</code> enumerated through author posts and login error messages</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="Figure 15 – WPScan against Site A" class="tall" src="screenshots/16-wpscan-siteA.png" /></p>
+<p><em>Figure 15. WPScan output for Site A: version 4.0.38 marked Insecure, the out-of-date Twenty Fourteen theme, and the shared default findings.</em></p>
+<h3>7.2 Site B – WordPress 7.1.4</h3>
+<p>WPScan identified Site B from the RSS generator with 100% confidence and reported:</p>
+<pre><code>[+] WordPress version 7.1.4 identified (Latest, released on 2026-10-28).
+</code></pre>
+<p>The version record again carried <strong>no individual vulnerability advisories</strong>. The scan reported:</p>
+<table>
+<thead>
+<tr>
+<th>Finding</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Server headers</td>
+<td><code>Apache/2.4.58 (Unix) OpenSSL/1.1.1w PHP/8.2.12 mod_perl/2.0.12 Perl/v5.34.1</code>; <code>X-Powered-By: PHP/8.2.12</code></td>
+</tr>
+<tr>
+<td>XML-RPC</td>
+<td>Enabled at <code>/siteB/xmlrpc.php</code></td>
+</tr>
+<tr>
+<td>Readme</td>
+<td><code>/siteB/readme.html</code> reachable</td>
+</tr>
+<tr>
+<td>Uploads listing</td>
+<td><code>/siteB/wp-content/uploads/</code> directory listing enabled</td>
+</tr>
+<tr>
+<td>WP-Cron</td>
+<td>External <code>/siteB/wp-cron.php</code> reachable</td>
+</tr>
+<tr>
+<td>Theme</td>
+<td>Twenty Twenty-Five 1.5; current</td>
+</tr>
+<tr>
+<td>User</td>
+<td><code>admin</code> enumerated through RSS, REST API, user sitemap, author ID pattern and login error messages</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="Figure 16 – WPScan against Site B" class="tall" src="screenshots/17-wpscan-siteB.png" /></p>
+<p><em>Figure 16. WPScan output for Site B: version 7.1.4 marked Latest, the current Twenty Twenty-Five theme, and the default findings including uploads directory listing.</em></p>
+<h3>7.3 Side-by-side</h3>
+<table>
+<thead>
+<tr>
+<th>Measurement</th>
+<th>Site A (4.0.38)</th>
+<th>Site B (7.1.4)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Core status</td>
+<td>Insecure</td>
+<td>Latest</td>
+</tr>
+<tr>
+<td>Core release date</td>
+<td>2022-11-30</td>
+<td>2026-10-28</td>
+</tr>
+<tr>
+<td>Version-specific vulnerabilities in WPScan</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Active theme</td>
+<td>Twenty Fourteen 1.2 (out of date)</td>
+<td>Twenty Twenty-Five 1.5 (current)</td>
+</tr>
+<tr>
+<td>XML-RPC</td>
+<td>Enabled</td>
+<td>Enabled</td>
+</tr>
+<tr>
+<td><code>readme.html</code></td>
+<td>Present</td>
+<td>Present</td>
+</tr>
+<tr>
+<td>External WP-Cron</td>
+<td>Enabled</td>
+<td>Enabled</td>
+</tr>
+<tr>
+<td>Uploads directory listing</td>
+<td>Not present</td>
+<td>Enabled</td>
+</tr>
+<tr>
+<td>User enumeration</td>
+<td><code>admin</code></td>
+<td><code>admin</code></td>
+</tr>
+<tr>
+<td>Server banner</td>
+<td>Full version disclosure</td>
+<td>Full version disclosure</td>
+</tr>
+</tbody>
+</table>
+<p>The two scans therefore produced identical counts of known version-specific vulnerabilities but different lifecycle verdicts. Site A's zero is the zero of a branch whose final release consolidated its historical fixes; Site B's zero is the zero of a release line that is still being maintained. The next section tests that distinction against NVD data.</p>
+<hr />
+<h2>8. NVD CVE analysis</h2>
+<p>I queried the NVD 2.0 API with a virtual CPE match for each exact version:</p>
+<pre><code class="language-bash">curl &quot;https://services.nvd.nist.gov/rest/json/cves/2.0?virtualMatchString=cpe:2.3:a:wordpress:wordpress:4.0.38&quot;
+curl &quot;https://services.nvd.nist.gov/rest/json/cves/2.0?virtualMatchString=cpe:2.3:a:wordpress:wordpress:7.1.4&quot;
+</code></pre>
+<p>The 4.0.38 query returned <strong>134 CVE records</strong>. The 7.1.4 query returned <strong>0</strong>.</p>
+<h3>8.1 Severity distribution for the 4.0.38 match set</h3>
+<table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Critical</td>
+<td>14</td>
+</tr>
+<tr>
+<td>High</td>
+<td>37</td>
+</tr>
+<tr>
+<td>Medium</td>
+<td>82</td>
+</tr>
+<tr>
+<td>Low</td>
+<td>1</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td><strong>134</strong></td>
+</tr>
+</tbody>
+</table>
+<h3>8.2 Publication years for the 4.0.38 match set</h3>
+<table>
+<thead>
+<tr>
+<th>Year</th>
+<th>CVEs</th>
+<th>Year</th>
+<th>CVEs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2015</td>
+<td>11</td>
+<td>2021</td>
+<td>1</td>
+</tr>
+<tr>
+<td>2016</td>
+<td>21</td>
+<td>2022</td>
+<td>3</td>
+</tr>
+<tr>
+<td>2017</td>
+<td>41</td>
+<td>2023</td>
+<td>2</td>
+</tr>
+<tr>
+<td>2018</td>
+<td>17</td>
+<td>2024</td>
+<td>2</td>
+</tr>
+<tr>
+<td>2019</td>
+<td>22</td>
+<td>2026</td>
+<td>1</td>
+</tr>
+<tr>
+<td>2020</td>
+<td>13</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3>8.3 Representative critical and high entries</h3>
+<table>
+<thead>
+<tr>
+<th>CVE</th>
+<th>CVSS</th>
+<th>Class</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CVE-2016-10033</td>
+<td>9.8</td>
+<td>PHPMailer <code>mailSend()</code> command injection, reachable through bundled core code</td>
+</tr>
+<tr>
+<td>CVE-2016-10045</td>
+<td>9.8</td>
+<td>PHPMailer <code>isMail</code> command injection</td>
+</tr>
+<tr>
+<td>CVE-2017-5611</td>
+<td>9.8</td>
+<td>SQL injection in <code>WP_Query</code></td>
+</tr>
+<tr>
+<td>CVE-2019-17669</td>
+<td>9.8</td>
+<td>Server-side request forgery in URL validation</td>
+</tr>
+<tr>
+<td>CVE-2019-17670</td>
+<td>9.8</td>
+<td>Server-side request forgery through Windows path handling</td>
+</tr>
+<tr>
+<td>CVE-2018-12895</td>
+<td>8.8</td>
+<td>Directory traversal and code execution through the post thumbnail parameter</td>
+</tr>
+<tr>
+<td>CVE-2016-4029</td>
+<td>8.6</td>
+<td>Intranet address bypass through octal/hexadecimal IP notation</td>
+</tr>
+<tr>
+<td>CVE-2026-87902</td>
+<td>8.1</td>
+<td>Unauthenticated local file inclusion in <code>get_page_template()</code>, leading to RCE</td>
+</tr>
+</tbody>
+</table>
+<p>Keyword classification of the 134 descriptions produced 55 cross-site scripting entries, 10 cross-site request forgery entries, 5 remote code execution entries, 4 SQL injection entries, 4 SSRF entries, 4 traversal entries and 4 deserialization entries. The categories overlap because many advisories describe chained effects.</p>
+<h3>8.4 Entries published after 4.0.38</h3>
+<p>Five records in the match set were published after 4.0.38 shipped on 30 November 2022:</p>
+<table>
+<thead>
+<tr>
+<th>CVE</th>
+<th>Published</th>
+<th>Severity</th>
+<th>Relationship to the 4.0 branch</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CVE-2023-22622</td>
+<td>2023-01-05</td>
+<td>5.3 Medium</td>
+<td>Describes the dependence of WP-Cron execution and update timing on client visits; the behaviour is present in 4.0.38</td>
+</tr>
+<tr>
+<td>CVE-2023-2745</td>
+<td>2023-05-17</td>
+<td>5.4 Medium</td>
+<td>Directory traversal through the <code>wp_lang</code> parameter; fixed in 6.2.1, not in the 4.0 branch</td>
+</tr>
+<tr>
+<td>CVE-2024-31210</td>
+<td>2024-04-04</td>
+<td>7.6 High</td>
+<td>Plugin-upload path leading to RCE; backported to 4.1.40 and 4.9.25, not to 4.0</td>
+</tr>
+<tr>
+<td>CVE-2022-4973</td>
+<td>2024-10-16</td>
+<td>4.9 Medium</td>
+<td>Authenticated stored XSS through <code>the_meta()</code>; fixed in 6.0.2 before 4.0.38 shipped</td>
+</tr>
+<tr>
+<td>CVE-2026-87902</td>
+<td>2026-09-22</td>
+<td>8.1 High</td>
+<td>Unauthenticated template path inclusion leading to RCE; NVD matches 4.0.38 and does not match 7.1.4</td>
+</tr>
+</tbody>
+</table>
+<p>CVE-2026-87902 is the clearest illustration of the lifecycle gap. It was published on 22 September 2026, six weeks before WordPress 7.1.4 was released, and it is absent from the 7.1.4 match set. The 4.0 branch had already been closed for almost four years when the advisory appeared, so no 4.0.x package contains its fix.</p>
+<p>The NVD count and the WPScan count measure different things. WPScan attaches advisories to the exact release that it can confirm and reported none for 4.0.38 because that final release incorporated the fixes available in 2022. NVD matches CPE ranges such as "before 4.5" and therefore keeps historical advisories attached to 4.0.38 even where a backport exists. For the comparison in this report I treated the WPScan result as the count of known unfixed advisories at scan time and the NVD result as the historical exposure profile of the code line. The post-release entries are the overlap where both views agree that no 4.0.x fix exists.</p>
+<hr />
+<h2>9. Core security architecture comparison</h2>
+<h3>9.1 Lifecycle and patch architecture</h3>
+<p>Site A is on a closed branch. The dashboard itself states that 4.0.38 is no longer supported and will not receive security updates. The 4.0 line ended with 4.0.38 on 30 November 2022. Every core advisory published after that date is permanently unpatched on Site A unless an administrator manually backports it.</p>
+<p>Site B is on the current line. 7.1.4 was released on 28 October 2026 and WPScan classified it as Latest. Its updater includes the <code>WP_Automatic_Updater</code> class and the rollback logic that the 4.0 tree does not contain. WordPress 4.0 does have the older <code>wp_maybe_auto_update()</code> cron path, but on an ended branch that path has no new package to install.</p>
+<p>This is the largest single architectural difference between the two installations. It is not a line of vulnerable code; it is the absence of a supplier.</p>
+<h3>9.2 Password cryptography</h3>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Site A (4.0.38)</th>
+<th>Site B (7.1.4)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Hashing library</td>
+<td><code>class-phpass.php</code></td>
+<td>PHP <code>password_hash()</code></td>
+</tr>
+<tr>
+<td>Algorithm</td>
+<td>phpass portable MD5</td>
+<td>bcrypt</td>
+</tr>
+<tr>
+<td>Stored prefix</td>
+<td><code>$P$B</code></td>
+<td><code>$wp$2y$10$</code></td>
+</tr>
+<tr>
+<td>Work factor</td>
+<td>8</td>
+<td>10</td>
+</tr>
+<tr>
+<td>Rehash on login</td>
+<td>No</td>
+<td>Yes, through <code>wp_password_needs_rehash()</code></td>
+</tr>
+<tr>
+<td>Algorithm filter</td>
+<td>None</td>
+<td><code>wp_hash_password_algorithm</code></td>
+</tr>
+</tbody>
+</table>
+<p>The 4.0 hash is a salted MD5 iterated 2^8 times. The 7.1.4 hash is bcrypt with cost 10. The modern core also exposes a filter for the algorithm and supports Argon2 constants where the PHP build provides them. The two records I read from <code>wp_users</code> confirmed the difference in the live databases, not only in the source.</p>
+<h3>9.3 Runtime and language compatibility</h3>
+<p>Site A predates PHP 7 and PHP 8. On PHP 8.2.12 it required the five interventions listed in Section 4.3: mysqli exception suppression, a <code>get_magic_quotes_gpc()</code> shim, a <code>create_function()</code> shim, a constructor wrapper for phpass, and a corrected <code>wp_signon()</code> call. Two of those defects, the phpass constructor and the <code>wp_signon()</code> type error, broke authentication outright rather than producing a degraded page.</p>
+<p>Site B ran natively. Its code uses typed signatures, attributes such as <code>#[\SensitiveParameter]</code>, and the PHP password API directly.</p>
+<p>This difference matters for security because a legacy core that cannot execute correctly on a supported PHP runtime cannot receive the runtime's own security fixes without ad hoc patching, and every ad hoc patch widens the gap between the running code and the vendor's signed release.</p>
+<h3>9.4 Attack surface</h3>
+<table>
+<thead>
+<tr>
+<th>Surface</th>
+<th>Site A</th>
+<th>Site B</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>REST API <code>/wp-json/</code></td>
+<td>Absent (404)</td>
+<td>Present</td>
+</tr>
+<tr>
+<td>User enumeration through REST</td>
+<td>Not available</td>
+<td><code>admin</code> returned by <code>/wp-json/wp/v2/users</code></td>
+</tr>
+<tr>
+<td>User sitemap</td>
+<td>Absent</td>
+<td><code>wp-sitemap-users-1.xml</code></td>
+</tr>
+<tr>
+<td>XML-RPC</td>
+<td>Enabled</td>
+<td>Enabled</td>
+</tr>
+<tr>
+<td><code>readme.html</code></td>
+<td>Present</td>
+<td>Present</td>
+</tr>
+<tr>
+<td>External WP-Cron</td>
+<td>Enabled</td>
+<td>Enabled</td>
+</tr>
+<tr>
+<td>Uploads directory listing</td>
+<td>Not present</td>
+<td>Enabled</td>
+</tr>
+<tr>
+<td>Application passwords</td>
+<td>Absent</td>
+<td>Present</td>
+</tr>
+<tr>
+<td>Site Health</td>
+<td>Absent</td>
+<td>Present</td>
+</tr>
+<tr>
+<td>Sodium compatibility library</td>
+<td>Absent</td>
+<td>Present</td>
+</tr>
+<tr>
+<td>File editors</td>
+<td>Present</td>
+<td>Present</td>
+</tr>
+</tbody>
+</table>
+<p>The modern core exposes a larger nominal attack surface: a REST API, a user sitemap and application passwords. In this lab the REST API and sitemap both disclosed the <code>admin</code> account, and WPScan confirmed the username through five independent methods on Site B. Site A also disclosed <code>admin</code>, but through author-post metadata and differentiated login errors rather than a JSON endpoint.</p>
+<p>The comparison is therefore not "old core has more endpoints". It is that the modern core has more endpoints <strong>and</strong> a maintained response process, modern password storage, and a runtime that matches the code. The old core has fewer endpoints but no process behind them.</p>
+<h3>9.5 Default configuration weaknesses shared by both</h3>
+<p>The scans showed that several weaknesses are properties of the default installation rather than of the core generation:</p>
+<ul>
+<li><strong>XML-RPC enabled.</strong> Both <code>xmlrpc.php</code> endpoints answered POST requests with HTTP 200. XML-RPC carries the pingback and brute-force surfaces that WPScan references.</li>
+<li><strong>Version disclosure.</strong> Both <code>readme.html</code> files were reachable, and both RSS feeds emitted <code>&lt;generator&gt;https://wordpress.org/?v=…&lt;/generator&gt;</code>.</li>
+<li><strong>WP-Cron reachable over HTTP.</strong> Both <code>/wp-cron.php</code> endpoints responded, and WPScan flagged the dependence on external requests for scheduled work.</li>
+<li><strong>Verbose server headers.</strong> Both responses disclosed the Apache, OpenSSL, PHP, mod_perl and Perl versions, plus <code>X-Powered-By: PHP/8.2.12</code>.</li>
+<li><strong>No HTTP security headers.</strong> Neither site returned HSTS or a content security policy on the plain HTTP vhost.</li>
+<li><strong>Administrator username <code>admin</code>.</strong> Both sites used the same predictable administrator name.</li>
+</ul>
+<p>These findings are configuration-level. They appeared on the current core as well as the legacy one, which is why the lifecycle and cryptography differences in Sections 9.1 and 9.2 carry more weight in the comparison than the shared scan findings.</p>
+<hr />
+<h2>10. Discussion</h2>
+<p>The phrase "inherent vulnerability" can mean two different things in a core comparison. It can mean a defect in the source that an attacker can reach, or it can mean a structural property of the release that determines whether defects get fixed.</p>
+<p>On the first meaning, the two cores scored the same in WPScan: zero version-specific advisories. That result is accurate for the exact releases. WordPress 4.0.38 was a consolidated security release for the 4.0 line, and WordPress 7.1.4 is the current release. Neither carried an open WPScan advisory at scan time.</p>
+<p>On the second meaning, the cores diverged sharply. Site A's branch closed in November 2022. The 4.0.38 archive cannot contain a fix for a vulnerability published in 2023, 2024 or 2026, and three post-release entries in the NVD match set were never backported to 4.0. Site B was six weeks old at the time of the scan and sits on a line that receives fixes, including the fix for CVE-2026-87902.</p>
+<p>The runtime evidence pointed the same way. A core that needs a phpass constructor wrapper and a <code>wp_signon()</code> call correction to authenticate on PHP 8.2 is not merely old; it is disconnected from the platform it runs on. The modern core used the platform's password API and ran without intervention.</p>
+<p>The default configuration evidence cut across both. XML-RPC, <code>readme.html</code>, WP-Cron and version banners were present on both sites, and the uploads listing and REST user disclosure were present on the modern site. Those findings show that a current core does not by itself remove configuration exposure; they do not restore parity on the lifecycle and cryptography axes.</p>
+<p>My overall finding is that the decisive difference between Site A and Site B is the maintenance architecture. WordPress 4.0.38's inherent weakness is that it cannot be patched, and its MD5-based password storage compounds the consequence of any authentication bypass. WordPress 7.1.4's inherent strength is that it can be patched, stores passwords with bcrypt, and runs on the PHP version it was built for. The scan counts alone would have hidden that difference.</p>
+<hr />
+<h2>11. Conclusion</h2>
+<p>I installed XAMPP, deployed WordPress 4.0.38 and WordPress 7.1.4 as two independent sites, completed both installations, and scanned both with WPScan 4.1.0.</p>
+<p>WPScan classified Site A as Insecure (released 30 November 2022) and Site B as Latest (released 28 October 2026). Both scans returned zero version-specific vulnerabilities. Site A's scan exposed an out-of-date Twenty Fourteen 1.2 theme; Site B's scan exposed an enabled uploads directory listing. Both sites exposed XML-RPC, <code>readme.html</code>, external WP-Cron, full server banners and the <code>admin</code> username.</p>
+<p>The NVD comparison separated the two releases. The version range for 4.0.38 matched 134 CVE records (14 critical, 37 high, 82 medium, 1 low). The range for 7.1.4 matched none. Five records were published after 4.0.38 shipped, including CVE-2026-87902 (CVSS 8.1, unauthenticated template inclusion leading to RCE), which NVD matches to 4.0.38 and not to 7.1.4.</p>
+<p>The core architecture comparison produced four differences: an ended branch versus a current branch; phpass MD5 cost 8 versus bcrypt cost 10; a core that required five PHP 8.2 compatibility interventions versus one that ran natively; and a larger but maintained modern attack surface versus a smaller but unmaintained legacy one. The shared default exposures showed that configuration risk exists independently of core generation.</p>
+<hr />
+<h2>Appendix A – Key commands</h2>
+<pre><code class="language-bash"># Services
+sudo /opt/lampp/lampp start
+sudo /opt/lampp/lampp status
+
+# Databases
+/opt/lampp/bin/mysql -uroot -e &quot;CREATE DATABASE wp_sitea CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;&quot;
+/opt/lampp/bin/mysql -uroot -e &quot;CREATE DATABASE wp_siteb CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;&quot;
+
+# Deployment
+unzip -q wordpress-4.0.38.zip -d src/siteA
+unzip -q wordpress-7.1.4.zip  -d src/siteB
+sudo cp -a src/siteA/wordpress /opt/lampp/htdocs/siteA
+sudo cp -a src/siteB/wordpress /opt/lampp/htdocs/siteB
+sudo chown -R daemon:daemon /opt/lampp/htdocs/siteA /opt/lampp/htdocs/siteB
+
+# Versions
+grep -h &quot;wp_version =&quot; src/siteA/wordpress/wp-includes/version.php \
+                    src/siteB/wordpress/wp-includes/version.php
+
+# WPScan
+wpscan --update
+wpscan --url http://localhost/siteA/ --api-token [REDACTED] --enumerate u \
+       --random-user-agent --no-banner --format json --output scans/siteA.json
+wpscan --url http://localhost/siteB/ --api-token [REDACTED] --enumerate u \
+       --random-user-agent --no-banner --format json --output scans/siteB.json
+
+# NVD
+curl &quot;https://services.nvd.nist.gov/rest/json/cves/2.0?virtualMatchString=cpe:2.3:a:wordpress:wordpress:4.0.38&quot;
+curl &quot;https://services.nvd.nist.gov/rest/json/cves/2.0?virtualMatchString=cpe:2.3:a:wordpress:wordpress:7.1.4&quot;
+</code></pre>
+<h2>Appendix B – Artefacts</h2>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scans/siteA.json</code></td>
+<td>WPScan JSON, Site A</td>
+</tr>
+<tr>
+<td><code>scans/siteB.json</code></td>
+<td>WPScan JSON, Site B</td>
+</tr>
+<tr>
+<td><code>scans/nvd-wordpress-4.0.38.json</code></td>
+<td>NVD 2.0 response, 134 records</td>
+</tr>
+<tr>
+<td><code>scans/nvd-wordpress-7.1.4.json</code></td>
+<td>NVD 2.0 response, 0 records</td>
+</tr>
+<tr>
+<td><code>scans/nvd-wordpress-4.0.38-cves.csv</code></td>
+<td>134-row CVE table (ID, date, severity, CVSS, vector, description)</td>
+</tr>
+<tr>
+<td><code>logs/wpscan-siteA-cli.txt</code></td>
+<td>Console capture, Site A</td>
+</tr>
+<tr>
+<td><code>logs/wpscan-siteB-cli.txt</code></td>
+<td>Console capture, Site B</td>
+</tr>
+<tr>
+<td><code>logs/wpscan-siteA-shot.txt</code></td>
+<td>Annotated console capture used for Figure 15</td>
+</tr>
+<tr>
+<td><code>logs/wpscan-siteB-shot.txt</code></td>
+<td>Annotated console capture used for Figure 16</td>
+</tr>
+<tr>
+<td><code>screenshots/01-17</code></td>
+<td>Evidence images used in this report</td>
+</tr>
+</tbody>
+</table>
+<h2>Appendix C – Host and application versions</h2>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Version</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Kali GNU/Linux</td>
+<td>Rolling 2026.2</td>
+</tr>
+<tr>
+<td>Kernel</td>
+<td>7.1.5+kali-amd64</td>
+</tr>
+<tr>
+<td>XAMPP for Linux</td>
+<td>8.2.12-0</td>
+</tr>
+<tr>
+<td>Apache</td>
+<td>2.4.58 (Unix)</td>
+</tr>
+<tr>
+<td>MariaDB</td>
+<td>10.4.32</td>
+</tr>
+<tr>
+<td>PHP</td>
+<td>8.2.12</td>
+</tr>
+<tr>
+<td>OpenSSL</td>
+<td>1.1.1w</td>
+</tr>
+<tr>
+<td>phpMyAdmin</td>
+<td>5.2.1</td>
+</tr>
+<tr>
+<td>WPScan</td>
+<td>4.1.0</td>
+</tr>
+<tr>
+<td>WordPress Site A</td>
+<td>4.0.38</td>
+</tr>
+<tr>
+<td>WordPress Site B</td>
+<td>7.1.4</td>
+</tr>
+</tbody>
+</table>
+</body></html>

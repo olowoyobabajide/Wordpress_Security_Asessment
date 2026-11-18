@@ -1,0 +1,81 @@
+┌──(olowoyobabajide㉿jyde)-[~/Documents/wordpress_work]
+└─$ wpscan --url http://localhost/siteB/ --api-token [REDACTED] --random-user-agent
+
+[+] URL: http://localhost/siteB/ [::1]
+[+] Started: Wed Nov 18 01:32:59 2026
+[+] Command Line: wpscan --url http://localhost/siteB/ --api-token [REDACTED] --random-user-agent --no-banner --disable-tls-checks
+[+] Hostname: jyde
+
+Interesting Finding(s):
+
+[+] Headers
+ | Interesting Entries:
+ |  - Server: Apache/2.4.58 (Unix) OpenSSL/1.1.1w PHP/8.2.12 mod_perl/2.0.12 Perl/v5.34.1
+ |  - X-Powered-By: PHP/8.2.12
+ | Found By: Headers (Passive Detection)
+ | Confidence: 100%
+
+[+] XML-RPC seems to be enabled: http://localhost/siteB/xmlrpc.php
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 100%
+ | References:
+ |  - http://codex.wordpress.org/XML-RPC_Pingback_API
+ |  - https://www.rapid7.com/db/modules/auxiliary/scanner/http/wordpress_ghost_scanner/
+ |  - https://www.rapid7.com/db/modules/auxiliary/dos/http/wordpress_xmlrpc_dos/
+ |  - https://www.rapid7.com/db/modules/auxiliary/scanner/http/wordpress_xmlrpc_login/
+ |  - https://www.rapid7.com/db/modules/auxiliary/scanner/http/wordpress_pingback_access/
+
+[+] WordPress readme found: http://localhost/siteB/readme.html
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 100%
+
+[+] Upload directory has listing enabled: http://localhost/siteB/wp-content/uploads/
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 100%
+
+[+] The external WP-Cron seems to be enabled: http://localhost/siteB/wp-cron.php
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 60%
+ | References:
+ |  - https://www.iplocation.net/defend-wordpress-from-ddos
+ |  - https://github.com/wpscanteam/wpscan/issues/1299
+
+[+] WordPress version 7.1.4 identified (Latest, released on 2026-10-28).
+ | Found By: Rss Generator (Passive Detection)
+ |  - http://localhost/siteB/feed/, <generator>https://wordpress.org/?v=7.1.4</generator>
+ | Confirmed By: Rss Generator (Passive Detection)
+ |  - http://localhost/siteB/comments/feed/, <generator>https://wordpress.org/?v=7.1.4</generator>
+
+[+] WordPress theme in use: twentytwentyfive
+ | Location: http://localhost/siteB/wp-content/themes/twentytwentyfive/
+ | Latest Version: 1.5 (up to date)
+ | Last Updated: 2026-05-19 11:00pm GMT (6 months ago, per WordPress.org)
+ | Active Installs: 1,000,000 (per WordPress.org)
+ | Readme: http://localhost/siteB/wp-content/themes/twentytwentyfive/readme.txt
+ | [!] Directory listing is enabled
+ | Style URL: http://localhost/siteB/wp-content/themes/twentytwentyfive/style.css
+ | Style Name: Twenty Twenty-Five
+ | Style URI: https://wordpress.org/themes/twentytwentyfive/
+ | Description: Twenty Twenty-Five emphasizes simplicity and adaptability. It offers flexible design options, suppor...
+ | Author: the WordPress team
+ | Author URI: https://wordpress.org
+ |
+ | Found By: Urls In Homepage (Passive Detection)
+ | Confirmed By: Urls In 404 Page (Passive Detection)
+ |
+ | Version: 1.5 (80% confidence)
+ | Found By: Style (Passive Detection)
+ |  - http://localhost/siteB/wp-content/themes/twentytwentyfive/style.css, Match: 'Version: 1.5'
+
+[+] WPScan DB API OK
+ | Plan: free
+ | Requests Done (during the scan): 2
+ | Requests Remaining: 0
+[+] Finished: Wed Nov 18 01:33:11 2026
+[+] Requests Done: 35
+[+] Cached Requests: 6
+[+] Most response codes received: 200: 22, 404: 12, 302: 1
+[+] Data Sent: 9.558 KB
+[+] Data Received: 292.24 KB
+[+] Memory used: 174.695 MB
+[+] Elapsed time: 00:00:11

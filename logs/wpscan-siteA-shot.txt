@@ -1,0 +1,77 @@
+┌──(olowoyobabajide㉿jyde)-[~/Documents/wordpress_work]
+└─$ wpscan --url http://localhost/siteA/ --api-token [REDACTED] --random-user-agent
+
+[+] URL: http://localhost/siteA/ [::1]
+[+] Started: Wed Nov 18 01:32:39 2026
+[+] Command Line: wpscan --url http://localhost/siteA/ --api-token [REDACTED] --random-user-agent --no-banner --disable-tls-checks
+[+] Hostname: jyde
+
+Interesting Finding(s):
+
+[+] Headers
+ | Interesting Entries:
+ |  - Server: Apache/2.4.58 (Unix) OpenSSL/1.1.1w PHP/8.2.12 mod_perl/2.0.12 Perl/v5.34.1
+ |  - X-Powered-By: PHP/8.2.12
+ | Found By: Headers (Passive Detection)
+ | Confidence: 100%
+
+[+] XML-RPC seems to be enabled: http://localhost/siteA/xmlrpc.php
+ | Found By: Headers (Passive Detection)
+ | Confidence: 100%
+ | Confirmed By:
+ |  - Link Tag (Passive Detection), 30% confidence
+ |  - Direct Access (Aggressive Detection), 100% confidence
+ | References:
+ |  - http://codex.wordpress.org/XML-RPC_Pingback_API
+ |  - https://www.rapid7.com/db/modules/auxiliary/scanner/http/wordpress_ghost_scanner/
+ |  - https://www.rapid7.com/db/modules/auxiliary/dos/http/wordpress_xmlrpc_dos/
+ |  - https://www.rapid7.com/db/modules/auxiliary/scanner/http/wordpress_xmlrpc_login/
+ |  - https://www.rapid7.com/db/modules/auxiliary/scanner/http/wordpress_pingback_access/
+
+[+] WordPress readme found: http://localhost/siteA/readme.html
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 100%
+
+[+] The external WP-Cron seems to be enabled: http://localhost/siteA/wp-cron.php
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 60%
+ | References:
+ |  - https://www.iplocation.net/defend-wordpress-from-ddos
+ |  - https://github.com/wpscanteam/wpscan/issues/1299
+
+[+] WordPress version 4.0.38 identified (Insecure, released on 2022-11-30).
+ | Found By: Rss Generator (Passive Detection)
+ |  - http://localhost/siteA/?feed=rss2, <generator>https://wordpress.org/?v=4.0.38</generator>
+ | Confirmed By: Rss Generator (Passive Detection)
+ |  - http://localhost/siteA/?feed=comments-rss2, <generator>https://wordpress.org/?v=4.0.38</generator>
+
+[+] WordPress theme in use: twentyfourteen
+ | Location: http://localhost/siteA/wp-content/themes/twentyfourteen/
+ | Last Updated: 2026-08-18 11:00pm GMT (3 months ago, per WordPress.org)
+ | Active Installs: 50,000 (per WordPress.org)
+ | [!] The version is out of date, the latest version is 4.5
+ | Style URL: http://localhost/siteA/wp-content/themes/twentyfourteen/style.css?ver=4.0.38
+ | Style Name: Twenty Fourteen
+ | Style URI: http://wordpress.org/themes/twentyfourteen
+ | Description: In 2014, our default theme lets you create a responsive magazine website with a sleek, modern design...
+ | Author: the WordPress team
+ | Author URI: http://wordpress.org/
+ |
+ | Found By: Css Style In Homepage (Passive Detection)
+ |
+ | Version: 1.2 (80% confidence)
+ | Found By: Style (Passive Detection)
+ |  - http://localhost/siteA/wp-content/themes/twentyfourteen/style.css?ver=4.0.38, Match: 'Version: 1.2'
+
+[+] WPScan DB API OK
+ | Plan: free
+ | Requests Done (during the scan): 2
+ | Requests Remaining: 1
+[+] Finished: Wed Nov 18 01:32:46 2026
+[+] Requests Done: 40
+[+] Cached Requests: 5
+[+] Most response codes received: 200: 19, 404: 18, 500: 2, 302: 1
+[+] Data Sent: 13.591 KB
+[+] Data Received: 195.298 KB
+[+] Memory used: 174.23 MB
+[+] Elapsed time: 00:00:07
